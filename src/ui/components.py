@@ -14,6 +14,25 @@ def render_sidebar() -> Tuple[str, str, str, str, int, bool]:
         is_iterativo = st.toggle("🔄 Modifica codice esistente (Iterativo)", value=False)
         
         st.markdown("---")
+        
+        # --- NEW RAG INGESTION SECTION ---
+        st.markdown("### <i class='fa-solid fa-folder-open' style='color:#10b981;'></i> Carica Pattern Aziendali (Opzionale)", unsafe_allow_html=True)
+        uploaded_file = st.file_uploader("Allega le tue Naming Conventions, Architetture interne, o file proprietari in .txt, .md o .csv", type=["txt", "md", "csv"])
+        
+        if uploaded_file is not None:
+            try:
+                # To read file as string:
+                stringio = uploaded_file.getvalue().decode("utf-8")
+                st.session_state.custom_context = stringio
+                st.success("✅ Contesto Aziendale caricato correttamente!", icon="📚")
+            except Exception as e:
+                st.error(f"Errore durante la lettura del file: {e}")
+                st.session_state.custom_context = ""
+        else:
+            # Clear it if removed
+            st.session_state.custom_context = ""
+            
+        st.markdown("---")
         st.markdown("""
         <div style='text-align: center; color: #94a3b8; font-size: 0.85em; margin-top: 20px;'>
             <i class="fa-solid fa-rocket" style="color:#10b981;"></i> PromptDoctor v2.0 <span class="gradient-text">PRO</span><br>

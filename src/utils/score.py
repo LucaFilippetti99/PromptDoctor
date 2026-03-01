@@ -6,7 +6,8 @@ def calculate_score(
     stack: List[str], 
     is_iterativo: bool, 
     prompt_tokens: int,
-    used_ai: bool = False
+    used_ai: bool = False,
+    ai_judge_score: int = None
 ) -> Dict[str, Any]:
     """
     Calculate the gamified prompt score.
@@ -33,6 +34,11 @@ def calculate_score(
 
     score = s_setup + s_table + s_fewshot + s_specs + s_tokens + s_ai_bonus
     score = min(score, 100) # Cap at 100
+
+    if ai_judge_score is not None:
+        # Weighted Average: 60% AI, 40% Rules
+        score = int((ai_judge_score * 0.6) + (score * 0.4))
+        score = min(max(score, 0), 100)
 
     suggestions = []
     if s_table == 0: suggestions.append("richiedi l'output a tabelle")

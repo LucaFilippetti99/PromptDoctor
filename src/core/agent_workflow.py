@@ -1,3 +1,5 @@
+import json
+import re
 from typing import Dict, TypedDict
 from langchain_community.llms import Ollama
 from langchain_core.prompts import PromptTemplate
@@ -21,6 +23,8 @@ class AgentState(TypedDict):
     analysis: str
     architecture: str
     final_structured_text: str
+    score_ai: int
+    giudizio_critico: str
 
 class MultiAgentRevisor:
     """
@@ -60,6 +64,42 @@ class MultiAgentRevisor:
             handler.container.markdown(handler.text)
             
         return {"analysis": result.strip()}
+
+    def _judge_node(self, state: AgentState) -> Dict:
+        """
+        Evaluates the original request, assigning a score and a critical analysis.
+        """
+        prompt = PromptTemplate.from_template(
+            "Sei un Senior Prompt Engineer e un severo Giudice AI. Analizza la seguente richiesta utente. "
+            "Valutane la qualità, la chiarezza e la completezza.\\n"
+            "Devi restituire esclusivamente un oggetto JSON valido con la seguente struttura:\\n"
+            '{{\\n  "score": <intero da 0 a 100>,\\n  "analisi": "<breve frase, max 15 parole>"\\n}}\\n'
+            "Non includere marker markdown (es. ```json o ```). Solo il testo JSON.\\n\\n"
+            "Richiesta Utente:\\n{request}"
+        )
+        chain = prompt | self.llm
+        
+        config = {}
+        
+        try:
+            result = chain.invoke({"request": state['original_request']}, config=config)
+            
+            # Utilizza regex per estrarre l'oggetto JSON per evitare errori di formato
+            match = re.search(r'\{.*?\}', result, re.DOTALL)
+            if match:
+                clean_result = match.group(0)
+                data = json.loads(clean_result)
+                score_ai = int(data.get("score", 70))
+                giudizio_critico = str(data.get("analisi", "L'intuizione è buona ma mancano dettagli."))
+            else:
+                raise ValueError("Nessun oggetto JSON trovato nella risposta dell'LLM.")
+                
+        except Exception as e:
+            print(f"Error parsing AI Judge output: {e}\\nRaw output: {result if 'result' in locals() else 'N/A'}")
+            score_ai = 70
+            giudizio_critico = "Impossibile calcolare il punteggio automatico, assegnato 70 di default."
+            
+        return {"score_ai": score_ai, "giudizio_critico": giudizio_critico}
 
     def _architect_node(self, state: AgentState) -> Dict:
         """
@@ -116,12 +156,14 @@ class MultiAgentRevisor:
         workflow = StateGraph(AgentState)
         
         # Add nodes
+        workflow.add_node("judge", self._judge_node)
         workflow.add_node("analyst", self._analyst_node)
         workflow.add_node("architect", self._architect_node)
         workflow.add_node("formatter", self._formatter_node)
         
         # Add edges connecting the nodes
-        workflow.set_entry_point("analyst")
+        workflow.set_entry_point("judge")
+        workflow.add_edge("judge", "analyst")
         workflow.add_edge("analyst", "architect")
         workflow.add_edge("architect", "formatter")
         workflow.add_edge("formatter", END)
@@ -129,21 +171,30 @@ class MultiAgentRevisor:
         # Compile the graph
         return workflow.compile()
 
-    def rewrite_text(self, text: str, containers: Dict = None) -> str:
+    def rewrite_text(self, text: str, containers: Dict = None) -> Dict:
         """
         Executes the Multi-Agent workflow on the input text.
+        Returns a dictionary with text, score_ai, and giudizio_critico.
         """
         self.current_containers = containers or {}
         
+        fallback = {
+            "text": text,
+            "score_ai": 70,
+            "giudizio_critico": "Analisi non completata."
+        }
+        
         if not text or not text.strip():
-            return text
+            return fallback
             
         try:
             initial_state = {
                 "original_request": text,
                 "analysis": "",
                 "architecture": "",
-                "final_structured_text": ""
+                "final_structured_text": "",
+                "score_ai": 0,
+                "giudizio_critico": ""
             }
             
             # Execute the graph
@@ -151,11 +202,18 @@ class MultiAgentRevisor:
             
             # Extract final text, fallback to original if empty
             final_text = result.get('final_structured_text', "").strip()
+            score_ai = result.get('score_ai', 70)
+            giudizio_critico = result.get('giudizio_critico', "Analisi completata con successo.")
+            
             if not final_text:
-                return text
+                return fallback
                 
-            return final_text
+            return {
+                "text": final_text,
+                "score_ai": score_ai,
+                "giudizio_critico": giudizio_critico
+            }
             
         except Exception as e:
             print(f"Error during LangGraph Execution: {e}")
-            return text
+            return fallback

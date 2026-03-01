@@ -14,13 +14,13 @@ class PatternEngine:
         self.ollama_url = ollama_url
         self.model = model
 
-    def analyze_text(self, text: str, use_ai: bool = False) -> Tuple[List[str], Dict[str, Any], bool]:
+    def analyze_text(self, text: str, use_ai: bool = False, custom_context: str = "") -> Tuple[List[str], Dict[str, Any], bool]:
         """
         Analyze text and extract patterns.
         Returns: (matches, modifiers, used_ai)
         """
         if use_ai:
-            ai_matches, ai_modifiers = self._ai_analysis(text)
+            ai_matches, ai_modifiers = self._ai_analysis(text, custom_context)
             if ai_matches or ai_modifiers.get('libs') or ai_modifiers.get('framework'):
                 return ai_matches, ai_modifiers, True
             # Fallback if AI fails or returns empty
@@ -67,7 +67,7 @@ class PatternEngine:
                         
         return matches, modifiers
 
-    def _ai_analysis(self, text: str) -> Tuple[List[str], Dict[str, Any]]:
+    def _ai_analysis(self, text: str, custom_context: str = "") -> Tuple[List[str], Dict[str, Any]]:
         prompt = f"""
         Sei un software architect. Analizza la seguente richiesta di progetto e identifica le tecnologie chiave rilevanti.
         Restituisci ESATTAMENTE e SOLO un JSON valido con questa struttura. Non includere backtick o markdown extra.
@@ -79,7 +79,16 @@ class PatternEngine:
             "api": ["api suggerite da integrare, es: scryfall, spoonacular"],
             "iterative": false // true se l'utente chiede di modificare, aggiornare o fixare codice esistente
         }}
+        """
 
+        if custom_context.strip():
+            prompt += f"""
+        ATTENZIONE: L'utente lavora in una specifica azienda. Usa ESCLUSIVAMENTE e DA' PRIORITÀ ASSOLUTA alle tecnologie, librerie e pattern descritti in questo Documento Aziendale:
+        
+        {custom_context}
+        """
+
+        prompt += f"""
         Richiesta: "{text}"
         """
 
