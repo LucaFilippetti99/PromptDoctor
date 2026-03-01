@@ -1,0 +1,50 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+env/
+.venv/
+.env/
+
+# Streamlit config (optional, ignore if you only have secrets here)
+# .streamlit/
+
+# Secret files
+secrets.toml
+.env
+
+# Database
+*.db
+*.sqlite3
+
+# OS generated files
+.DS_Store
+Thumbs.db
+.DS_Store?
+ehthumbs.db
+ehthumbs_vista.db
+*.cab
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
