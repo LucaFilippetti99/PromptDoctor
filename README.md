@@ -36,15 +36,23 @@ This entire project is the result of **Vibe Coding** (AI-Assisted Software Engin
 
 3. Start [Ollama](https://ollama.com/) (make sure it's running in the background and you have downloaded a model, e.g., `ollama run mistral` or `llama3`).
 
-4. **Start the API Backend Server**:
-   Open a terminal, activate your environment, and run:
+4. **Start the Application**:
+   Open a terminal, activate your environment, and launch the main entry point which will automatically start both the backend server and the frontend UI:
+
+   ```bash
+   python run.py
+   ```
+
+   **Alternatively**, you can start the services manually in separate terminals:
+
+   *API Backend Server*:
 
    ```bash
    uvicorn src.api_server:app --host 0.0.0.0 --port 8000 --reload
    ```
 
-5. **Start the Streamlit Frontend**:
-   Open a *second* terminal, activate your environment, and run:
+   *Streamlit Frontend*:
+   Open a *second* terminal and run:
 
    ```bash
    streamlit run src/app.py
