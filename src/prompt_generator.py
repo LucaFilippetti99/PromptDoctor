@@ -35,9 +35,10 @@ def generate_costar(
     if modifiers and modifiers.get('api'):
         styles.append(f"Integrazioni API: {', '.join(modifiers['api'])}.")
         
-    if dettaglio >= 80:
+    dettaglio_val = int(dettaglio) if str(dettaglio).isdigit() else 50
+    if dettaglio_val >= 80:
         styles.append("Scrivi un codice altamente modulare, con type hints, docstrings per ogni funzione e gestione rigorosa delle eccezioni. Spiega le scelte architetturali.")
-    elif dettaglio <= 40:
+    elif dettaglio_val <= 40:
         styles.append("Vai dritto al sodo: voglio codice super compatto e funzionante. Evita spiegazioni prolisse.")
     else:
         styles.append("Mantieni un codice pulito, leggibile e commentato nei punti chiave.")

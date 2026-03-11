@@ -99,9 +99,10 @@ if generate_btn:
                 final_prompt = response['final_prompt']
                 score = response['score']
                 score_data = response['score_data']
-                giudizio_critico = response['giudizio_critico']
+                giudizio_critico = response.get('giudizio_critico')
                 final_problem_desc = response['final_problem_desc']
                 prompt_data = response['costar_data']
+                used_ai_prompt = response.get('used_ai_prompt', False)
                 use_ai_backend = use_ai
                 
                 if score > 90:
@@ -124,7 +125,11 @@ if generate_btn:
                         with st.expander("🤖 Richiesta Originale Ristrutturata dall'AI", expanded=False):
                             st.markdown(final_problem_desc)
                     
-                    st.markdown("### <i class='fa-solid fa-wand-magic-sparkles' style='color:#10b981;'></i> Prompt Generato (Copia questo!)", unsafe_allow_html=True)
+                    if used_ai_prompt:
+                        st.markdown("### <i class='fa-solid fa-wand-magic-sparkles' style='color:#10b981;'></i> Prompt scritto dal Prompt Engineer AI", unsafe_allow_html=True)
+                        st.success("✨ Questo prompt è stato scritto dall'agente Prompt Writer usando le Linee Guida Gemini!")
+                    else:
+                        st.markdown("### <i class='fa-solid fa-wand-magic-sparkles' style='color:#10b981;'></i> Prompt Generato (CO-STAR)", unsafe_allow_html=True)
                     st.code(final_prompt, language="markdown")
                     
                 with col_res2:
@@ -132,17 +137,17 @@ if generate_btn:
                     if use_ai and giudizio_critico:
                         st.warning(f"🗣️ **Il Giudice AI dice:** {giudizio_critico}")
                         
-                # CO-STAR Breakdown Table
-                st.markdown("### <i class='fa-solid fa-list-check' style='color:#10b981;'></i> CO-STAR Preview", unsafe_allow_html=True)
-                costar_df = [
-                    {"Sezione": "Context", "Contenuto": prompt_data['context']},
-                    {"Sezione": "Objective", "Contenuto": prompt_data['objective']},
-                    {"Sezione": "Style", "Contenuto": prompt_data['style']},
-                    {"Sezione": "Tone", "Contenuto": prompt_data['tone']},
-                    {"Sezione": "Audience", "Contenuto": prompt_data['audience']},
-                    {"Sezione": "Response", "Contenuto": prompt_data['response']}
-                ]
-                st.dataframe(pd.DataFrame(costar_df), use_container_width=True, hide_index=True)
+                # CO-STAR Breakdown Table (always shown as reference)
+                with st.expander("📋 CO-STAR Breakdown (Dettaglio Strutturale)", expanded=not used_ai_prompt):
+                    costar_df = [
+                        {"Sezione": "Context", "Contenuto": prompt_data['context']},
+                        {"Sezione": "Objective", "Contenuto": prompt_data['objective']},
+                        {"Sezione": "Style", "Contenuto": prompt_data['style']},
+                        {"Sezione": "Tone", "Contenuto": prompt_data['tone']},
+                        {"Sezione": "Audience", "Contenuto": prompt_data['audience']},
+                        {"Sezione": "Response", "Contenuto": prompt_data['response']}
+                    ]
+                    st.dataframe(pd.DataFrame(costar_df), use_container_width=True, hide_index=True)
 
             except Exception as e:
                 st.error(f"❌ Errore Backend API: {e}")

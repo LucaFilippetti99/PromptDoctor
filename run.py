@@ -3,6 +3,24 @@ import sys
 import time
 import os
 
+def kill_process_on_port(port):
+    try:
+        # Trova il PID del processo che usa la porta (Windows)
+        result = subprocess.run(['netstat', '-ano'], capture_output=True, text=True)
+        killed = False
+        for line in result.stdout.splitlines():
+            if f":{port}" in line and "LISTENING" in line:
+                parts = line.strip().split()
+                pid = parts[-1]
+                if pid != "0":
+                    print(f"[*] Termino il processo {pid} in ascolto sulla porta {port}...")
+                    subprocess.run(['taskkill', '/PID', pid, '/F'], capture_output=True)
+                    killed = True
+        if killed:
+            time.sleep(1) # Attendiamo che la porta sia liberata dal sistema
+    except Exception as e:
+        print(f"Errore nella pulizia della porta {port}: {e}")
+
 def start_backend():
     print("Avvio del Backend (FastAPI)...")
     return subprocess.Popen(
@@ -24,6 +42,10 @@ def start_frontend():
 if __name__ == "__main__":
     print("🤖 Avvio PromptDoctor Client/Server 🤖")
     print("-" * 40)
+    
+    # Libera le porte dai vecchi processi appesi
+    kill_process_on_port(8000)
+    kill_process_on_port(8501)
     
     backend_process = None
     frontend_process = None
@@ -53,9 +75,13 @@ if __name__ == "__main__":
             # Se uno dei due dovesse crashare, ferma tutto
             if backend_process.poll() is not None:
                 print("❌ ERRORE: Il Backend si è fermato improvvisamente.")
+                stderr = backend_process.stderr.read()
+                print(f"Dettagli errore:\n{stderr}")
                 break
             if frontend_process.poll() is not None:
                 print("❌ ERRORE: Il Frontend si è fermato improvvisamente.")
+                stderr = frontend_process.stderr.read()
+                print(f"Dettagli errore:\n{stderr}")
                 break
 
     except KeyboardInterrupt:

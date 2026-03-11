@@ -179,3 +179,28 @@ STATIC_TECH_PATTERNS = {
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 DEFAULT_MODEL = "llama3.2"  # Ensure user has pulled this model, e.g. `ollama run llama3.2`
+
+GEMINI_PROMPT_GUIDELINES = """
+## I 4 Elementi Fondamentali di un Prompt
+Per assicurarti che un prompt sia formulato in modo efficace, devi prestare attenzione a quattro aspetti principali:
+- **Utente tipo**: Specifica il ruolo che l'intelligenza artificiale deve assumere (es. "Sei a capo del reparto creativo...").
+- **Attività**: Dichiara chiaramente l'operazione da svolgere. Includi sempre un verbo o un comando.
+- **Contesto**: Fornisci i dettagli di base necessari per inquadrare la richiesta. Fornisci sempre quanto più contesto possibile.
+- **Formato**: Indica come desideri che vengano presentate le informazioni finali (es. limite di caratteri, numero esatto di opzioni).
+
+## Regole d'Oro per la Stesura
+- **Scrivi in modo naturale**: Utilizza un linguaggio discorsivo, rivolgiti all'IA come a un'altra persona.
+- **Sii conciso e senza gergo**: Formula breve ma precisa, parole semplici.
+- **Spiega esattamente cosa ti serve**: Sii specifico, ripeti i concetti se necessario.
+- **La lunghezza conta**: I prompt più efficaci contengono in media circa 21 parole con un contesto pertinente.
+- **Sfrutta i documenti**: Fai riferimento a file/contesti noti.
+
+## Tecniche Avanzate
+- **Suddividi i compiti complessi**: Se ci sono più attività correlate, crea prompt distinti.
+- **Imposta limiti precisi**: Genera risultati specifici (es. limiti caratteri).
+- **Assegna un ruolo creativo**: Incentiva l'IA ad assumere una precisa persona.
+- **Definisci tono e registro**: Adatta il testo al pubblico (formale, informale, tecnico...).
+- **Chiedi feedback**: Invita l'IA a domandare "C'è qualche informazione che ti sarebbe di aiuto per generare un output ottimale?".
+- **Iterazione e revisione**: Se i risultati non soddisfano, intervieni sul prompt e riformula. Verifica sempre che l'output sia preciso e rilevante.
+"""
+

@@ -39,7 +39,7 @@ class GeneratePromptRequest(BaseModel):
     ruolo: str
     framework: str
     lingua: str
-    dettaglio: str
+    dettaglio: int
     is_iterativo: bool
     custom_context: str = ""
 
@@ -83,40 +83,48 @@ async def generate_prompt_endpoint(req: GeneratePromptRequest):
         final_problem_desc = req.problem_desc
         score_ai = None
         giudizio_critico = None
+        ai_final_prompt = None
         
         if req.use_ai:
-            # Essendo un API Request, non stiamo mappando container interattivi
+            # AI workflow: Judge → Analyst → Architect → Prompt Writer
             ai_result = revisor.rewrite_text(req.problem_desc)
             final_problem_desc = ai_result.get("text", req.problem_desc)
+            ai_final_prompt = ai_result.get("final_prompt", None)
             score_ai = ai_result.get("score_ai", 70)
             giudizio_critico = ai_result.get("giudizio_critico", "")
-            
+        
+        # Always generate CO-STAR as fallback / for the breakdown table
         prompt_data = generate_costar(
-            req.obiettivo, req.ruolo, req.framework, req.lingua, req.dettaglio, 
+            req.obiettivo, req.ruolo, req.framework, req.lingua, int(req.dettaglio), 
             req.is_iterativo, final_problem_desc, modifiers, stack
         )
         
-        tokens = len(prompt_data['final'].split())
+        # Use AI-written prompt if available, otherwise CO-STAR
+        final_prompt = ai_final_prompt if ai_final_prompt else prompt_data['final']
+        
+        tokens = len(final_prompt.split())
         score_data = calculate_score(
             req.problem_desc, modifiers, stack, req.is_iterativo, 
-            tokens, used_ai, ai_judge_score=score_ai
+            tokens, req.use_ai, ai_judge_score=score_ai
         )
         
         db_manager.save_prompt(
             original_input=req.problem_desc, 
-            generated_prompt=prompt_data['final'], 
+            generated_prompt=final_prompt, 
             score=score_data['total']
         )
         
         return {
-            "final_prompt": prompt_data['final'],
+            "final_prompt": final_prompt,
             "final_problem_desc": final_problem_desc,
             "score": score_data['total'],
+            "score_ai": score_ai,
             "score_data": score_data,
             "costar_data": prompt_data,
             "matches": matches,
             "modifiers": modifiers,
-            "giudizio_critico": giudizio_critico
+            "giudizio_critico": giudizio_critico,
+            "used_ai_prompt": ai_final_prompt is not None
         }
 
     except Exception as e:
